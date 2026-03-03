@@ -178,7 +178,7 @@ class ProjectRepository(
                     thumbnail = metadata?.thumbnail,
                     tagIds = meta.tagIds,
                     embeddedTags = meta.embeddedTags,
-                    uuid = meta.uuid, // Pass UUID
+                    uuid = meta.uuid ?: metadata?.uuid, // Fallback to live metadata if index is stale
                 )
             }.sortedByDescending { it.lastModified }
     }
@@ -203,7 +203,7 @@ class ProjectRepository(
                     thumbnail = metadata?.thumbnail,
                     tagIds = meta.tagIds,
                     embeddedTags = meta.embeddedTags,
-                    uuid = meta.uuid,
+                    uuid = meta.uuid ?: metadata?.uuid,
                 )
             }.sortedByDescending { it.lastModified }
     }

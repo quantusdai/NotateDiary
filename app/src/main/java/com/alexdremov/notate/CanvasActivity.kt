@@ -4,9 +4,11 @@ package com.alexdremov.notate
 
 import android.content.Intent
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Bundle
 import android.view.Gravity
 import android.view.ViewGroup
+import android.webkit.SslErrorHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -679,6 +681,15 @@ class CanvasActivity : AppCompatActivity() {
                             val url = request?.url?.toString() ?: return false
                             // Allow only http and https
                             return !url.startsWith("http://") && !url.startsWith("https://")
+                        }
+
+                        override fun onReceivedSslError(
+                            view: WebView?,
+                            handler: SslErrorHandler?,
+                            error: android.net.http.SslError?,
+                        ) {
+                            // Default behavior: cancel loading on SSL errors for security
+                            handler?.cancel()
                         }
                     }
 
