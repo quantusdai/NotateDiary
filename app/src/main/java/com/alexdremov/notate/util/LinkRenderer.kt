@@ -68,7 +68,7 @@ object LinkRenderer {
         canvas.drawRoundRect(item.logicalBounds, cornerRadius, cornerRadius, paint)
 
         // If we are in a clearing/masking mode (e.g. from hideItemsInCache or Eraser),
-        // the background fill above already cleared/masked the area. 
+        // the background fill above already cleared/masked the area.
         // We MUST NOT draw the icon or text as they might not respect the xfermode (Drawables)
         // or would just be redundant work.
         if (xfermode == null) {
