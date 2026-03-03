@@ -94,6 +94,7 @@ class OnyxCanvasView
                     EpdController.setScreenHandWritingPenState(this, EpdPenManager.PEN_DRAWING)
                     updateTouchHelperTool()
                 },
+                lastStrokeEndTimeProvider = { lastStrokeEndTime },
             )
 
         private val selectionInteractor = SelectionInteractor(this, canvasController, viewScope, matrix, inverseMatrix)
@@ -111,6 +112,8 @@ class OnyxCanvasView
         private var twoFingerStartPt2 = floatArrayOf(0f, 0f)
         private var twoFingerPointerId1 = -1
         private var twoFingerPointerId2 = -1
+
+        private var lastStrokeEndTime = 0L
 
         private var currentTool: PenTool = PenTool.defaultPens()[0]
         private var isReadOnly = false
@@ -666,8 +669,9 @@ class OnyxCanvasView
             if (enabled) {
                 setupTouchHelper()
             } else {
+                // Keep touchHelper active but disable hardware inking to maintain palm rejection
+                touchHelper?.setRawDrawingRenderEnabled(false)
                 touchHelper?.setRawDrawingEnabled(false)
-                touchHelper?.closeRawDrawing()
                 EpdController.setScreenHandWritingPenState(this, EpdPenManager.PEN_PAUSE)
             }
         }
@@ -824,5 +828,9 @@ class OnyxCanvasView
 
             // Use DU for fast visual update after undo/redo instead of full GC refresh
             EpdController.invalidate(this, UpdateMode.DU)
+        }
+
+        fun notifyStrokeFinished() {
+            lastStrokeEndTime = System.currentTimeMillis()
         }
     }

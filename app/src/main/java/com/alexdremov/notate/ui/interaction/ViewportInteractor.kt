@@ -20,6 +20,7 @@ class ViewportInteractor(
     private val onScaleChanged: () -> Unit,
     private val onInteractionStart: () -> Unit,
     private val onInteractionEnd: () -> Unit,
+    private val lastStrokeEndTimeProvider: () -> Long,
 ) {
     // State
     private var currentScale = 1.0f
@@ -31,8 +32,14 @@ class ViewportInteractor(
     private var lastTouchX = 0f
     private var lastTouchY = 0f
 
+    // Smoothing
+    private var filteredDx = 0f
+    private var filteredDy = 0f
+    private val SMOOTHING_FACTOR = 0.5f // Simple EMA smoothing
+
     // Config
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+    private val POST_STROKE_SETTLING_MS = 150L // Ignore touch right after pen release to prevent jitter
 
     // Scale Detector
     private val scaleDetector =
@@ -54,27 +61,32 @@ class ViewportInteractor(
 
     fun onTouchEvent(event: MotionEvent): Boolean =
         com.alexdremov.notate.util.PerformanceProfiler.trace("ViewportInteractor.onTouchEvent") {
+            // Palm Rejection / Settling check
+            val timeSinceStroke = System.currentTimeMillis() - lastStrokeEndTimeProvider()
+            if (timeSinceStroke < POST_STROKE_SETTLING_MS) {
+                return@trace false
+            }
+
             // Pass to ScaleDetector
             scaleDetector.onTouchEvent(event)
 
             // Handle Panning
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // Determine focus point (if multi-touch, though ACTION_DOWN is usually single)
                     lastTouchX = event.x
                     lastTouchY = event.y
                     isPanning = false
                     isInteracting = true
                     hasPerformedScale = false
+                    filteredDx = 0f
+                    filteredDy = 0f
                 }
 
                 MotionEvent.ACTION_POINTER_DOWN -> {
-                    // Update focus point to avoid jump
                     updateFocusPoint(event)
                 }
 
                 MotionEvent.ACTION_POINTER_UP -> {
-                    // Update focus point to avoid jump
                     updateFocusPoint(event)
                 }
 
@@ -83,24 +95,27 @@ class ViewportInteractor(
                     val focusY = getFocusY(event)
 
                     if (!isInteracting) {
-                        // Safety: if we missed DOWN (e.g. intercepted), re-init
                         lastTouchX = focusX
                         lastTouchY = focusY
                         isInteracting = true
                     }
 
-                    val dx = focusX - lastTouchX
-                    val dy = focusY - lastTouchY
+                    val rawDx = focusX - lastTouchX
+                    val rawDy = focusY - lastTouchY
 
                     if (!isPanning) {
-                        if (hypot(dx, dy) > touchSlop) {
+                        if (hypot(rawDx, rawDy) > touchSlop) {
                             isPanning = true
                             startInteraction()
                         }
                     }
 
                     if (isPanning) {
-                        matrix.postTranslate(dx, dy)
+                        // Apply simple smoothing to reduce EPD noise
+                        filteredDx = filteredDx * SMOOTHING_FACTOR + rawDx * (1 - SMOOTHING_FACTOR)
+                        filteredDy = filteredDy * SMOOTHING_FACTOR + rawDy * (1 - SMOOTHING_FACTOR)
+
+                        matrix.postTranslate(filteredDx, filteredDy)
                         com.alexdremov.notate.util.PerformanceProfiler.trace("ViewportInteractor.invalidateCallback") {
                             invalidateCallback()
                         }

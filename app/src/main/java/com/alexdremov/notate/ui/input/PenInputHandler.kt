@@ -609,6 +609,7 @@ class PenInputHandler(
             eraserHandler.reset()
             isCurrentStrokeEraser = false
             isStrokeInProgress = false
+            (view as? com.alexdremov.notate.ui.OnyxCanvasView)?.notifyStrokeFinished()
             onStrokeFinished()
         }
     }

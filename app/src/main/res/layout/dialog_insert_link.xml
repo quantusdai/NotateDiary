@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="400dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -82,7 +83,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
         <EditText
             android:id="@+id/edit_target"
@@ -98,10 +100,13 @@
 
         <Button
             android:id="@+id/btn_browse"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Browse"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            android:textColor="@android:color/black"
+            app:strokeColor="@android:color/black" />
     </LinearLayout>
 
     <!-- Buttons -->
@@ -114,11 +119,12 @@
 
         <Button
             android:id="@+id/btn_cancel"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Cancel"
-            style="?android:attr/borderlessButtonStyle"
-            android:textColor="@android:color/black" />
+            android:textColor="@android:color/black"
+            app:strokeColor="@android:color/black" />
 
         <Button
             android:id="@+id/btn_insert"
@@ -126,7 +132,7 @@
             android:layout_height="wrap_content"
             android:text="Insert"
             android:layout_marginStart="16dp"
-            android:backgroundTint="@android:color/black"
+            app:backgroundTint="@android:color/black"
             android:textColor="@android:color/white" />
     </LinearLayout>
 
