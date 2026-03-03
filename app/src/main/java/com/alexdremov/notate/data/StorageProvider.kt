@@ -59,8 +59,11 @@ interface StorageProvider {
 
     fun getFileMetadata(path: String): CanvasDataPreview?
 
-    // Support for ensuring UUID exists (migration)
-    fun ensureUuid(path: String): String? = null
+    // Support for ensuring UUID exists (migration) and optional regeneration
+    fun ensureUuid(
+        path: String,
+        force: Boolean = false,
+    ): String? = null
 }
 
 internal object StorageUtils {
@@ -76,6 +79,28 @@ internal object StorageUtils {
         } else {
             "$originalName Copy"
         }
+
+    fun injectUuidIntoJson(
+        inputStream: InputStream,
+        outputStream: OutputStream,
+        newUuid: String,
+    ) {
+        try {
+            val content = inputStream.bufferedReader().readText()
+            // Very simple JSON manipulation for performance - just replace or insert uuid field near the start
+            val updated =
+                if (content.contains("\"uuid\"")) {
+                    content.replace(Regex("\"uuid\"\\s*:\\s*\"[^\"]*\""), "\"uuid\": \"$newUuid\"")
+                } else {
+                    // Insert after first '{'
+                    content.replaceFirst("{", "{\n  \"uuid\": \"$newUuid\",")
+                }
+            outputStream.bufferedWriter().use { it.write(updated) }
+        } catch (e: Exception) {
+            Logger.e("Metadata", "Failed to inject UUID into JSON", e)
+            throw e
+        }
+    }
 
     fun extractMetadata(
         fileName: String?,
@@ -638,14 +663,21 @@ class LocalStorageProvider(
         if (!file.exists()) return false
 
         try {
-            if (file.isDirectory) {
-                val newDir = File(file.parent, "${file.name} Copy")
-                return file.copyRecursively(newDir, overwrite = false)
-            } else {
-                val newName = StorageUtils.getDuplicateName(file.name)
-                val newFile = File(file.parent, newName)
-                return file.copyTo(newFile, overwrite = false).exists()
+            val newFile =
+                if (file.isDirectory) {
+                    val newDir = File(file.parent, "${file.name} Copy")
+                    if (file.copyRecursively(newDir, overwrite = false)) newDir else null
+                } else {
+                    val newName = StorageUtils.getDuplicateName(file.name)
+                    val nf = File(file.parent, newName)
+                    if (file.copyTo(nf, overwrite = false).exists()) nf else null
+                }
+
+            if (newFile != null && newFile.isFile) {
+                // IMPORTANT: Generate a new UUID for the duplicate to avoid collisions
+                ensureUuid(newFile.absolutePath, force = true)
             }
+            return newFile != null
         } catch (e: Exception) {
             Logger.e("Storage", "Failed to duplicate item $path", e, showToUser = true)
             return false
@@ -740,13 +772,16 @@ class LocalStorageProvider(
         return StorageUtils.extractMetadata(file.name, { file.inputStream() }, file.length())
     }
 
-    override fun ensureUuid(path: String): String? {
+    override fun ensureUuid(
+        path: String,
+        force: Boolean,
+    ): String? {
         val file = File(path)
         if (!file.exists()) return null
 
         // 1. Check existing (fast)
         var meta = getFileMetadata(path)
-        if (meta?.uuid != null) return meta.uuid
+        if (meta?.uuid != null && !force) return meta.uuid
 
         // 2. Write
         val lock =
@@ -761,25 +796,32 @@ class LocalStorageProvider(
         return try {
             // 3. Re-check after lock to prevent double-generation
             meta = getFileMetadata(path)
-            if (meta?.uuid != null) return meta.uuid
+            if (meta?.uuid != null && !force) return meta.uuid
 
             // 4. Generate new
             val newUuid =
                 java.util.UUID
                     .randomUUID()
                     .toString()
-            Logger.i("Storage", "ensureUuid: Generating new UUID $newUuid for $path")
+            Logger.i("Storage", "ensureUuid: Generating new UUID $newUuid for $path (Force=$force)")
 
             val tempFile = File(file.parent, file.name + ".tmp")
             file.inputStream().use { input ->
                 tempFile.outputStream().use { output ->
-                    StorageUtils.createUpdatedProtobuf(
-                        input,
-                        output,
-                        meta?.tagIds ?: emptyList(),
-                        meta?.tagDefinitions ?: emptyList(),
-                        newUuid,
-                    )
+                    if (file.extension == "notate") {
+                        StorageUtils.createUpdatedProtobuf(
+                            input,
+                            output,
+                            meta?.tagIds ?: emptyList(),
+                            meta?.tagDefinitions ?: emptyList(),
+                            newUuid,
+                        )
+                    } else if (file.extension == "json") {
+                        StorageUtils.injectUuidIntoJson(input, output, newUuid)
+                    } else {
+                        // Fallback copy if unsupported format but somehow reached here
+                        input.copyTo(output)
+                    }
                 }
             }
             Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
@@ -848,6 +890,7 @@ class SafStorageProvider(
                                 thumbnail = metadata?.thumbnail,
                                 tagIds = metadata?.tagIds ?: emptyList(),
                                 embeddedTags = metadata?.tagDefinitions ?: emptyList(),
+                                uuid = metadata?.uuid,
                             )
                         }
 
@@ -973,6 +1016,8 @@ class SafStorageProvider(
                     input.copyTo(output)
                 }
             }
+            // Generate new UUID for SAF duplicate
+            ensureUuid(newFile.uri.toString(), force = true)
             true
         } catch (e: Exception) {
             Logger.e("Storage", "Failed to duplicate item $path", e, showToUser = true)
@@ -991,26 +1036,38 @@ class SafStorageProvider(
 
         if (file.isDirectory) return false
         // Basic check for file extension from name
-        if (file.name?.endsWith(".notate") != true) return false
+        val name = file.name ?: ""
+        if (!name.endsWith(".notate")) return false
 
+        val mutex = getMutex(path)
         val tempFile = File.createTempFile("saf_update", ".tmp", context.cacheDir)
-        return try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                tempFile.outputStream().use { output ->
-                    StorageUtils.createUpdatedProtobuf(input, output, tagIds, tagDefinitions)
+
+        // Blocking synchronized block for shared mutex across threads
+        return synchronized(mutex) {
+            try {
+                val meta = getFileMetadata(path)
+                val uuid =
+                    meta?.uuid ?: java.util.UUID
+                        .randomUUID()
+                        .toString()
+
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output ->
+                        StorageUtils.createUpdatedProtobuf(input, output, tagIds, tagDefinitions, uuid)
+                    }
                 }
-            }
-            context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
-                tempFile.inputStream().use { input ->
-                    input.copyTo(output)
+                context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+                    tempFile.inputStream().use { input ->
+                        input.copyTo(output)
+                    }
                 }
+                true
+            } catch (e: Exception) {
+                Logger.e("Storage", "Failed to set tags SAF", e, showToUser = true)
+                false
+            } finally {
+                tempFile.delete()
             }
-            true
-        } catch (e: Exception) {
-            Logger.e("Storage", "Failed to set tags SAF", e, showToUser = true)
-            false
-        } finally {
-            tempFile.delete()
         }
     }
 
@@ -1063,6 +1120,7 @@ class SafStorageProvider(
                                 thumbnail = metadata.thumbnail,
                                 tagIds = metadata.tagIds,
                                 embeddedTags = metadata.tagDefinitions,
+                                uuid = metadata.uuid,
                             ),
                         )
                     }
@@ -1106,47 +1164,69 @@ class SafStorageProvider(
         })
     }
 
-    override fun ensureUuid(path: String): String? {
+    override fun ensureUuid(
+        path: String,
+        force: Boolean,
+    ): String? {
         val uri = Uri.parse(path)
         val file = DocumentFile.fromSingleUri(context, uri) ?: return null
         if (!file.exists()) return null
 
         // 1. Check existing
-        val meta = getFileMetadata(path)
-        if (meta?.uuid != null) return meta.uuid
+        var meta = getFileMetadata(path)
+        if (meta?.uuid != null && !force) return meta.uuid
 
-        // 2. Generate new
-        val newUuid =
-            java.util.UUID
-                .randomUUID()
-                .toString()
-        Logger.i("Storage", "ensureUuid (SAF): Generating new UUID $newUuid for $path")
+        val mutex = getMutex(path)
+        val resultUuid: String?
 
-        // 3. Write
-        val tempFile = File.createTempFile("saf_update_uuid", ".tmp", context.cacheDir)
-        return try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                tempFile.outputStream().use { output ->
-                    StorageUtils.createUpdatedProtobuf(
-                        input,
-                        output,
-                        meta?.tagIds ?: emptyList(),
-                        meta?.tagDefinitions ?: emptyList(),
-                        newUuid,
-                    )
+        synchronized(mutex) {
+            // 2. Re-check after lock
+            meta = getFileMetadata(path)
+            if (meta?.uuid != null && !force) {
+                resultUuid = meta.uuid
+            } else {
+                // 3. Generate new
+                val newUuid =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString()
+                Logger.i("Storage", "ensureUuid (SAF): Generating new UUID $newUuid for $path (Force=$force)")
+
+                // 4. Write
+                val tempFile = File.createTempFile("saf_update_uuid", ".tmp", context.cacheDir)
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        tempFile.outputStream().use { output ->
+                            val name = file.name ?: ""
+                            if (name.endsWith(".notate")) {
+                                StorageUtils.createUpdatedProtobuf(
+                                    input,
+                                    output,
+                                    meta?.tagIds ?: emptyList(),
+                                    meta?.tagDefinitions ?: emptyList(),
+                                    newUuid,
+                                )
+                            } else if (name.endsWith(".json")) {
+                                StorageUtils.injectUuidIntoJson(input, output, newUuid)
+                            } else {
+                                input.copyTo(output)
+                            }
+                        }
+                    }
+                    context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
+                        tempFile.inputStream().use { input ->
+                            input.copyTo(output)
+                        }
+                    }
+                    resultUuid = newUuid
+                } catch (e: Exception) {
+                    Logger.e("Storage", "Failed to ensure UUID SAF", e)
+                    return null
+                } finally {
+                    tempFile.delete()
                 }
             }
-            context.contentResolver.openOutputStream(uri, "wt")?.use { output ->
-                tempFile.inputStream().use { input ->
-                    input.copyTo(output)
-                }
-            }
-            newUuid
-        } catch (e: Exception) {
-            Logger.e("Storage", "Failed to ensure UUID SAF", e)
-            null
-        } finally {
-            tempFile.delete()
         }
+        return resultUuid
     }
 }

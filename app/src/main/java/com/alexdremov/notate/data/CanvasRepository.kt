@@ -405,17 +405,29 @@ class CanvasRepository(
                 val ext = originalName.substringAfterLast('.', "")
                 val base = originalName.substringBeforeLast('.')
                 val safeBase = base.replace("[^a-zA-Z0-9\\s-]".toRegex(), "_").trim()
-                val filename = if (ext.isNotEmpty()) "$safeBase.$ext" else safeBase
 
-                val targetFile = File(assetsDir, filename)
+                var filename = if (ext.isNotEmpty()) "$safeBase.$ext" else safeBase
+                var targetFile = File(assetsDir, filename)
 
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    targetFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+                // 1. Resolve collision if file already exists
+                var counter = 1
+                while (targetFile.exists()) {
+                    val newName = if (ext.isNotEmpty()) "$safeBase ($counter).$ext" else "$safeBase ($counter)"
+                    targetFile = File(assetsDir, newName)
+                    filename = newName
+                    counter++
                 }
 
-                "assets/$filename"
+                // 2. Perform copy
+                val success =
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        targetFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                        true
+                    } ?: false
+
+                if (success) "assets/$filename" else null
             } catch (e: Exception) {
                 Logger.e("CanvasRepository", "Failed to import asset: $uri", e)
                 null

@@ -886,7 +886,7 @@ class CanvasControllerImpl(
                         val pts = floatArrayOf(p.x, p.y)
                         transform.mapPoints(pts)
                         com.onyx.android.sdk.data.note
-                            .TouchPoint(pts[0], pts[1], p.pressure, p.size, p.timestamp)
+                            .TouchPoint(pts[0], pts[1], p.pressure, p.size, p.tiltX, p.tiltY, p.timestamp)
                     }
 
                 item.copy(path = newPath, points = newPoints, bounds = newBounds, width = newWidth)
@@ -959,7 +959,7 @@ class CanvasControllerImpl(
                 val measuredHeight = sizePair.second
 
                 val finalLogical =
-                    android.graphics.RectF(
+                    RectF(
                         centerX - measuredWidth / 2f,
                         centerY - measuredHeight / 2f,
                         centerX + measuredWidth / 2f,

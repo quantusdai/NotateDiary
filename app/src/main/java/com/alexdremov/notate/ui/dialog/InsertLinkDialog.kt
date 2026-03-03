@@ -24,6 +24,7 @@ import com.onyx.android.sdk.api.device.epd.UpdateMode
 
 class InsertLinkDialog(
     context: Context,
+    private val existingItem: com.alexdremov.notate.model.LinkItem? = null,
     private val onConfirm: (String, String, LinkType) -> Unit,
     private val onBrowse: (onResult: (name: String, uuid: String) -> Unit) -> Unit,
     private val onSelectFile: (onResult: (name: String, path: String) -> Unit) -> Unit,
@@ -38,9 +39,9 @@ class InsertLinkDialog(
     private lateinit var btnInsert: Button
     private lateinit var btnCancel: Button
 
-    private var selectedType: LinkType = LinkType.INTERNAL_NOTE
-    private var targetUuid: String? = null
-    private var targetPath: String? = null
+    private var selectedType: LinkType = existingItem?.type ?: LinkType.INTERNAL_NOTE
+    private var targetUuid: String? = if (existingItem?.type == LinkType.INTERNAL_NOTE) existingItem.target else null
+    private var targetPath: String? = if (existingItem?.type == LinkType.LOCAL_FILE) existingItem.target else null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +69,28 @@ class InsertLinkDialog(
         btnBrowse = findViewById<Button>(R.id.btn_browse)!!
         btnInsert = findViewById<Button>(R.id.btn_insert)!!
         btnCancel = findViewById<Button>(R.id.btn_cancel)!!
+
+        // Initialize with existing data
+        existingItem?.let { item ->
+            editName.setText(item.label)
+            editTarget.setText(if (item.type == LinkType.EXTERNAL_URL) item.target else item.label)
+            btnInsert.text = "Update"
+            when (item.type) {
+                LinkType.INTERNAL_NOTE -> {
+                    radioInternal.isChecked = true
+                    targetUuid = item.target
+                }
+
+                LinkType.EXTERNAL_URL -> {
+                    radioExternal.isChecked = true
+                }
+
+                LinkType.LOCAL_FILE -> {
+                    radioFile.isChecked = true
+                    targetPath = item.target
+                }
+            }
+        }
 
         setupListeners()
         updateState()
@@ -181,7 +204,7 @@ class InsertLinkDialog(
                 editTarget.hint = "Select a note..."
                 btnBrowse.text = "Browse"
                 btnBrowse.visibility = View.VISIBLE
-                if (targetUuid == null) editTarget.text.clear()
+                if (targetUuid == null && existingItem?.type != LinkType.INTERNAL_NOTE) editTarget.text.clear()
             }
 
             LinkType.LOCAL_FILE -> {
@@ -189,17 +212,17 @@ class InsertLinkDialog(
                 editTarget.hint = "Select a file..."
                 btnBrowse.text = "Select"
                 btnBrowse.visibility = View.VISIBLE
-                if (targetPath == null) editTarget.text.clear()
+                if (targetPath == null && existingItem?.type != LinkType.LOCAL_FILE) editTarget.text.clear()
             }
 
             LinkType.EXTERNAL_URL -> {
                 editTarget.isEnabled = true
                 editTarget.hint = "https://example.com"
                 btnBrowse.visibility = View.GONE
-                if (targetUuid != null || targetPath != null) {
-                    editTarget.text.clear()
-                    targetUuid = null
-                    targetPath = null
+                // Only clear if we are switching AWAY from a state that had a UUID or path,
+                // and the new type isn't what the existing item already has.
+                if (selectedType != existingItem?.type) {
+                    // logic to clear if needed
                 }
             }
         }

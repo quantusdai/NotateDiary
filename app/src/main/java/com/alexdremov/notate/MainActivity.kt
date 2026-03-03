@@ -307,6 +307,7 @@ fun MainScreen(
                         breadcrumbs = breadcrumbs,
                         allTags = tags,
                         disabledItemUuid = disabledItemUuid,
+                        isReadOnly = isPickerMode,
                         onBreadcrumbClick = { viewModel.loadBrowserItems(it.path) },
                         onItemClick = { item ->
                             when (item) {
@@ -327,10 +328,10 @@ fun MainScreen(
                                 }
                             }
                         },
-                        onItemDelete = { viewModel.deleteItem(it) },
-                        onItemRename = { item, newName -> viewModel.renameItem(item, newName) },
-                        onItemDuplicate = { item -> viewModel.duplicateItem(item) },
-                        onSetFileTags = { item, newTags -> viewModel.setFileTags(item, newTags) },
+                        onItemDelete = { if (!isPickerMode) viewModel.deleteItem(it) },
+                        onItemRename = { item, newName -> if (!isPickerMode) viewModel.renameItem(item, newName) },
+                        onItemDuplicate = { item -> if (!isPickerMode) viewModel.duplicateItem(item) },
+                        onSetFileTags = { item, newTags -> if (!isPickerMode) viewModel.setFileTags(item, newTags) },
                     )
                 }
 

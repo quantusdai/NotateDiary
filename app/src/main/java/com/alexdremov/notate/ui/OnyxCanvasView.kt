@@ -239,10 +239,15 @@ class OnyxCanvasView
                                 val item = canvasController.getItemAt(worldX, worldY)
 
                                 if (item != null) {
-                                    canvasController.clearSelection()
-                                    canvasController.selectItem(item)
-                                    // Hand off to Interactor to start drag
-                                    selectionInteractor.onLongPressDragStart(e.x, e.y)
+                                    if (item is com.alexdremov.notate.model.LinkItem) {
+                                        // Edit existing link
+                                        showLinkDialog(worldX, worldY, item)
+                                    } else {
+                                        canvasController.clearSelection()
+                                        canvasController.selectItem(item)
+                                        // Hand off to Interactor to start drag
+                                        selectionInteractor.onLongPressDragStart(e.x, e.y)
+                                    }
                                     performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                                 } else {
                                     // Show Contextual Menu
@@ -302,21 +307,26 @@ class OnyxCanvasView
         private fun showLinkDialog(
             x: Float,
             y: Float,
+            existingItem: com.alexdremov.notate.model.LinkItem? = null,
         ) {
             val dialog =
                 com.alexdremov.notate.ui.dialog.InsertLinkDialog(
                     context,
                     onConfirm = { label, target, type ->
                         viewScope.launch {
-                            canvasController.addLink(
-                                label,
-                                target,
-                                type,
-                                x,
-                                y,
-                                fontSize = 24f, // Default font size
-                                color = Color.BLACK,
-                            )
+                            if (existingItem != null) {
+                                canvasController.updateLink(existingItem, label, target, type)
+                            } else {
+                                canvasController.addLink(
+                                    label,
+                                    target,
+                                    type,
+                                    x,
+                                    y,
+                                    fontSize = 24f, // Default font size
+                                    color = Color.BLACK,
+                                )
+                            }
                         }
                     },
                     onBrowse = { callback ->
@@ -512,6 +522,13 @@ class OnyxCanvasView
             }
         }
 
+        private var pendingEpdUpdateMode: UpdateMode? = null
+
+        fun requestEpdRefresh(mode: UpdateMode = UpdateMode.GC) {
+            pendingEpdUpdateMode = mode
+            invalidateCanvas()
+        }
+
         private fun drawContent() {
             com.alexdremov.notate.util.PerformanceProfiler.trace("OnyxCanvasView.drawContent") {
                 val cv =
@@ -593,6 +610,16 @@ class OnyxCanvasView
                     }
                 } finally {
                     holder.unlockCanvasAndPost(cv)
+                }
+
+                val mode = pendingEpdUpdateMode
+                pendingEpdUpdateMode = null
+                if (mode != null) {
+                    if (mode == UpdateMode.GC) {
+                        performHardRefresh()
+                    } else {
+                        EpdController.invalidate(this@OnyxCanvasView, mode)
+                    }
                 }
             }
         }
