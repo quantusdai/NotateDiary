@@ -10,6 +10,10 @@ plugins {
     id("jacoco")
 }
 
+configurations.all {
+    exclude(group = "xpp3", module = "xpp3")
+}
+
 android {
     namespace = "com.alexdremov.notate"
     compileSdk = 36
