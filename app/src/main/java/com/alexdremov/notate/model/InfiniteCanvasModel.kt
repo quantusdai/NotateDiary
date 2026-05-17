@@ -182,19 +182,20 @@ class InfiniteCanvasModel {
             regions.forEach { region ->
                 region.quadtree?.retrieve(candidates, searchBounds)
             }
-            
+
             // Deduplicate candidates as items spanning multiple regions will appear multiple times
             val uniqueCandidates = candidates.distinctBy { it.order }
 
             if (uniqueCandidates.isEmpty()) return@withLock null
 
             // Pre-simplify eraser stroke to drastically reduce O(N*M) geometry checks
-            val optimizedEraser = if (eraserStroke.points.size > 20 && type != EraserType.LASSO) {
-                val simplified = StrokeGeometry.simplifyPoints(eraserStroke.points, 2.0f)
-                eraserStroke.copy(points = simplified)
-            } else {
-                eraserStroke
-            }
+            val optimizedEraser =
+                if (eraserStroke.points.size > 20 && type != EraserType.LASSO) {
+                    val simplified = StrokeGeometry.simplifyPoints(eraserStroke.points, 2.0f)
+                    eraserStroke.copy(points = simplified)
+                } else {
+                    eraserStroke
+                }
 
             when (type) {
                 EraserType.STROKE -> {
@@ -223,7 +224,7 @@ class InfiniteCanvasModel {
                     val simplifiedLasso = StrokeGeometry.simplifyPoints(eraserStroke.points, 3.0f)
                     uniqueCandidates.forEach { item ->
                         if (!eraserStroke.bounds.contains(item.bounds)) return@forEach
-                        
+
                         val isContained =
                             if (StrokeGeometry.isRectFullyInPolygon(item.bounds, simplifiedLasso)) {
                                 true

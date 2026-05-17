@@ -514,7 +514,7 @@ class PenInputHandler(
                             } else {
                                 eraserToolSnapshot?.eraserType ?: EraserType.STANDARD
                             }
-                        
+
                         // Standard pixel eraser should be DOCUMENT-CONSTANT (matching other tools).
                         val finalWidth = toolSnapshot.width
 
@@ -600,7 +600,12 @@ class PenInputHandler(
                                     val segmentPath = Path()
                                     if (newTouchPoints.isNotEmpty()) {
                                         segmentPath.moveTo(newTouchPoints[0].x, newTouchPoints[0].y)
-                                        for (i in 1 until newTouchPoints.size) segmentPath.lineTo(newTouchPoints[i].size, newTouchPoints[i].y)
+                                        for (i in 1 until newTouchPoints.size) {
+                                            segmentPath.lineTo(
+                                                newTouchPoints[i].size,
+                                                newTouchPoints[i].y,
+                                            )
+                                        }
                                     }
                                     val perfectedStroke =
                                         com.alexdremov.notate.model.Stroke(

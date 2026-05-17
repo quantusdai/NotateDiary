@@ -56,20 +56,21 @@ class InfiniteLayout : CanvasLayout {
                 BackgroundDrawer.draw(canvas, model.backgroundStyle, drawRect, zoomLevel = zoomLevel)
             }
 
-            // Eraser Overlay Logic: 
+            // Eraser Overlay Logic:
             // Use a layer to isolate the ink from the background grid.
             // The eraser will punch a hole through the ink in this layer,
             // while the background grid (drawn above) remains visible through the hole.
             val activeEraser = tileManager.activeEraserStroke
             val useLayer = activeEraser != null
-            
-            val saveCount = if (useLayer && activeEraser != null) {
-                val inflate = activeEraser.width * 2f
-                val layerRect = RectF(drawRect).apply { inset(-inflate, -inflate) }
-                canvas.saveLayer(layerRect, null)
-            } else {
-                -1
-            }
+
+            val saveCount =
+                if (useLayer && activeEraser != null) {
+                    val inflate = activeEraser.width * 2f
+                    val layerRect = RectF(drawRect).apply { inset(-inflate, -inflate) }
+                    canvas.saveLayer(layerRect, null)
+                } else {
+                    -1
+                }
 
             val useDirectVectors = visibleRect == null
             if (useDirectVectors) {
@@ -77,7 +78,7 @@ class InfiniteLayout : CanvasLayout {
             } else {
                 tileManager.render(canvas, visibleRect!!, zoomLevel)
             }
-            
+
             if (useLayer && activeEraser != null) {
                 tileManager.drawEraserOverlay(canvas, activeEraser, zoomLevel)
                 canvas.restoreToCount(saveCount)
@@ -167,15 +168,16 @@ class FixedPageLayout(
 
                     val activeEraser = tileManager.activeEraserStroke
                     val useLayer = activeEraser != null
-                    
+
                     // Use visibleRect (world coords) as layer bounds
-                    val saveCount = if (useLayer && activeEraser != null) {
-                        val inflate = activeEraser.width * 2f
-                        val layerRect = RectF(visibleRect).apply { inset(-inflate, -inflate) }
-                        canvas.saveLayer(layerRect, null)
-                    } else {
-                        -1
-                    }
+                    val saveCount =
+                        if (useLayer && activeEraser != null) {
+                            val inflate = activeEraser.width * 2f
+                            val layerRect = RectF(visibleRect).apply { inset(-inflate, -inflate) }
+                            canvas.saveLayer(layerRect, null)
+                        } else {
+                            -1
+                        }
 
                     tileManager.render(canvas, visibleRect, zoomLevel)
 
@@ -193,15 +195,16 @@ class FixedPageLayout(
 
                 val activeEraser = tileManager.activeEraserStroke
                 val useLayer = activeEraser != null
-                
+
                 // Inflate bounds for export
-                val saveCount = if (useLayer && activeEraser != null) {
-                    val inflate = activeEraser.width * 2f
-                    val layerRect = RectF(contentBounds).apply { inset(-inflate, -inflate) }
-                    canvas.saveLayer(layerRect, null)
-                } else {
-                    -1
-                }
+                val saveCount =
+                    if (useLayer && activeEraser != null) {
+                        val inflate = activeEraser.width * 2f
+                        val layerRect = RectF(contentBounds).apply { inset(-inflate, -inflate) }
+                        canvas.saveLayer(layerRect, null)
+                    } else {
+                        -1
+                    }
 
                 renderer.renderDirectVectorsSync(canvas, matrix, visibleRect, quality)
 

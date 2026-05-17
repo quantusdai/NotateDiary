@@ -112,13 +112,14 @@ class TileManager(
     @Volatile
     var activeEraserStroke: com.alexdremov.notate.model.Stroke? = null
 
-    private val eraserOverlayPaint = Paint().apply {
-        isAntiAlias = true
-        style = Paint.Style.STROKE
-        strokeJoin = Paint.Join.ROUND
-        strokeCap = Paint.Cap.ROUND
-        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
-    }
+    private val eraserOverlayPaint =
+        Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeJoin = Paint.Join.ROUND
+            strokeCap = Paint.Cap.ROUND
+            xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.CLEAR)
+        }
 
     private val tileCache = TileCache(tileSize)
 
@@ -449,7 +450,11 @@ class TileManager(
         }
     }
 
-    fun drawEraserOverlay(canvas: Canvas, stroke: com.alexdremov.notate.model.Stroke, scale: Float) {
+    fun drawEraserOverlay(
+        canvas: Canvas,
+        stroke: com.alexdremov.notate.model.Stroke,
+        scale: Float,
+    ) {
         renderer.drawItemToCanvas(canvas, stroke, xfermode = android.graphics.PorterDuff.Mode.CLEAR, scale = scale)
     }
 
@@ -759,7 +764,7 @@ class TileManager(
                     // ATOMIC COMMIT: Only put in cache if the version still matches.
                     // This is the core of the race-proof double buffering.
                     synchronized(pendingLock) {
-                        if (pJob.version == renderVersion.get()) {
+                        if (pJob.version == renderVersion.get() && isActive) {
                             tileCache.put(pJob.key, bitmap, pJob.version)
                         } else {
                             Logger.v("TileManager", "Discarding stale tile result for ${pJob.key}")

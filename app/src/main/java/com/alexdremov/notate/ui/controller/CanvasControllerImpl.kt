@@ -135,7 +135,7 @@ class CanvasControllerImpl(
         }
 
         val invalidated = withContext(Dispatchers.Default) { model.erase(stroke, type) }
-        
+
         withContext(Dispatchers.Main) {
             if (invalidated != null) {
                 // Redraw vectors to show proper cut caps
