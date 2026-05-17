@@ -191,15 +191,15 @@ fun MainToolbar(
         if (showExpanded) {
             // --- Expanded (Normal) State ---
             Surface(
-                modifier = Modifier.wrapContentSize().border(1.dp, Color.Black, RoundedCornerShape(11.dp)),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.wrapContentSize().border(1.dp, Color.Black, RoundedCornerShape(13.dp)),
+                shape = RoundedCornerShape(13.dp),
                 color = Color.White,
             ) {
                 val layoutModifier =
                     if (isHorizontal) {
-                        Modifier.wrapContentSize().padding(horizontal = 1.dp, vertical = 2.dp)
+                        Modifier.wrapContentSize().padding(horizontal = 2.dp, vertical = 2.dp)
                     } else {
-                        Modifier.wrapContentSize().padding(horizontal = 2.dp, vertical = 1.dp)
+                        Modifier.wrapContentSize().padding(horizontal = 2.dp, vertical = 2.dp)
                     }
 
                 // Layout Container
