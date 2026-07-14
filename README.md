@@ -7,7 +7,6 @@
 
 An AI Diary Android app built with Jetpack Compose, themed on Tom Riddle's diary. Features parchment background, handwritten typeface, ink fade-out & text dissolve animation, supports OpenAI-compatible LLM API for journal interaction.
 
-<p align="center"><img width="50%" src="assets/infinite.jpeg"><img width="50%" src="assets/finite.jpeg"></p>
 
 ## About Notate
 
