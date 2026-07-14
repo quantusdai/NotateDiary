@@ -1,9 +1,11 @@
-# Notate
+# NotateDiary
 
 [![Run Tests](https://github.com/alexdremov/notate/actions/workflows/test.yml/badge.svg)](https://github.com/alexdremov/notate/actions/workflows/test.yml)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/alexdremov/notate)](https://github.com/alexdremov/notate/releases/latest)
 
-**Beautiful High-Performance Infinite Canvas for Onyx Boox e-ink devices**
+**AI-enhanced note-taking app for Onyx Boox E-Ink devices with AI Diary features**
+
+An AI Diary Android app built with Jetpack Compose, themed on Tom Riddle's diary. Features parchment background, handwritten typeface, ink fade-out & text dissolve animation, supports OpenAI-compatible LLM API for journal interaction.
 
 <p align="center"><img width="50%" src="assets/infinite.jpeg"><img width="50%" src="assets/finite.jpeg"></p>
 
@@ -36,6 +38,14 @@ without sacrificing extensive functionality.
 | 📐 **Drawing Aids** | Angle snapping and axis locking for precise lines |
 | 📤 **Export & Share** | Export to PDF (vector or raster) and share directly |
 | ☁️ **Cloud Sync** | Google Drive / WebDAV integration with optional PDF sync |
+
+## 🤖 AI Diary
+
+Powered by OpenAI-compatible LLM APIs to enhance your note-taking experience:
+- Intelligent journal suggestions and prompts
+- Handwritten text extraction and summarization
+- Parchment background with handwritten typeface
+- Ink fade-out & text dissolve animations
 
 ## 🎮 Gestures & Controls
 
@@ -74,7 +84,7 @@ without sacrificing extensive functionality.
 
 - **Device:** Onyx Boox (Android 11+ recommended)
 
-### Relases
+### Releases
 
 Download the latest APK from the [Releases](https://github.com/alexdremov/notate/releases) section and install it on your device.
 
@@ -82,8 +92,8 @@ Download the latest APK from the [Releases](https://github.com/alexdremov/notate
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/alexdremov/notate.git
-   cd notate
+   git clone https://github.com/quantusdai/NotateDiary.git
+   cd NotateDiary
    ```
 
 2. **Build Debug APK:**
