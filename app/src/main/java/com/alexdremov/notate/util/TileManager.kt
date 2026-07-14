@@ -280,6 +280,14 @@ class TileManager(
                             refreshTiles(bounds)
                         }
 
+                        is InfiniteCanvasModel.ModelEvent.ItemsUpdated -> {
+                            hideItemsInCache(event.items)
+                            updateTilesWithItems(event.items)
+                            val bounds = RectF()
+                            event.items.forEach { bounds.union(it.bounds) }
+                            refreshTiles(bounds)
+                        }
+
                         is InfiniteCanvasModel.ModelEvent.BulkItemsAdded -> {
                             refreshTiles(event.bounds)
                         }

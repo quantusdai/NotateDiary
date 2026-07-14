@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,6 +70,7 @@ fun MainToolbar(
     onToolClick: (ToolbarItem, Rect) -> Unit,
     onActionClick: (ActionType) -> Unit,
     onOpenSidebar: () -> Unit,
+    onAiDiaryClick: () -> Unit = {},
     onToolbarExpandStart: () -> Unit = {},
     onToolbarExpanded: () -> Unit = {},
     onToolbarCollapsed: () -> Unit = {},
@@ -81,6 +83,7 @@ fun MainToolbar(
     val collapseTimeout by viewModel.toolbarCollapseTimeout.collectAsState()
     val isPenPopupOpen by viewModel.isPenPopupOpen.collectAsState()
     val isToolbarDragging by viewModel.isToolbarDragging.collectAsState()
+    val isAiDiaryMode by viewModel.isAiDiaryMode.collectAsState()
 
     // --- State ---
     // Collapsed State (Local)
@@ -303,6 +306,16 @@ fun MainToolbar(
                             },
                         )
 
+                        AiDiaryButton(
+                            isAiDiaryMode = isAiDiaryMode,
+                            onClick = {
+                                if (canProcessClick()) {
+                                    onInteraction()
+                                    onAiDiaryClick()
+                                }
+                            },
+                        )
+
                         SettingsButton(onClick = {
                             if (canProcessClick()) {
                                 onInteraction()
@@ -398,6 +411,16 @@ fun MainToolbar(
                             onRemove = {
                                 onInteraction()
                                 viewModel.removeToolbarItem(it)
+                            },
+                        )
+
+                        AiDiaryButton(
+                            isAiDiaryMode = isAiDiaryMode,
+                            onClick = {
+                                if (canProcessClick()) {
+                                    onInteraction()
+                                    onAiDiaryClick()
+                                }
                             },
                         )
 
@@ -675,6 +698,26 @@ fun SettingsButton(onClick: () -> Unit) {
             painter = painterResource(R.drawable.ic_more_vert),
             contentDescription = "Settings",
             tint = Color.Black,
+        )
+    }
+}
+
+@Composable
+fun AiDiaryButton(
+    isAiDiaryMode: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .size(48.dp)
+                .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Psychology,
+            contentDescription = "AI Diary",
+            tint = if (isAiDiaryMode) Color(0xFF4A90D9) else Color.Black,
         )
     }
 }

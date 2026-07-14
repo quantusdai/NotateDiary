@@ -1,8 +1,10 @@
 package com.alexdremov.notate.util
 
 import android.content.Context
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.text.StaticLayout
 import android.text.TextPaint
 import android.util.LruCache
@@ -12,6 +14,7 @@ import io.noties.markwon.ext.strikethrough.StrikethroughPlugin
 import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.ext.tasklist.TaskListPlugin
 import kotlin.math.ceil
+import kotlin.math.max
 
 object TextRenderer {
     @Volatile
@@ -44,11 +47,13 @@ object TextRenderer {
         text: String,
         width: Float,
         fontSize: Float,
+        typefaceName: String? = null,
     ): Float {
         val markwon = getMarkwon(context)
         val spanned = markwon.toMarkdown(text)
         val paint = TextPaint(Paint.ANTI_ALIAS_FLAG)
         paint.textSize = fontSize
+        applyTypeface(context, paint, typefaceName)
 
         val layout =
             StaticLayout.Builder
@@ -74,6 +79,7 @@ object TextRenderer {
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
         textPaint.textSize = item.fontSize
         textPaint.color = item.color
+        applyTypeface(context, textPaint, item.typefaceName)
 
         val newLayout =
             StaticLayout.Builder
@@ -136,15 +142,37 @@ object TextRenderer {
                 layout.paint.alpha = (item.opacity * 255).toInt()
             }
 
+            // Ink-bleed blur for AI Diary handwritten replies while revealing.
+            // The blur shrinks as the text solidifies, so the final result is crisp.
+            val originalMaskFilter = layout.paint.maskFilter
+            if (item.typefaceName == AiDiaryTypeface.NAME && item.opacity < 1.0f) {
+                val blurRadius = item.fontSize * 0.25f * (1f - item.opacity)
+                if (blurRadius > 0.5f) {
+                    layout.paint.maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+                }
+            }
+
             layout.draw(canvas)
 
             // Restore Paint State
             layout.paint.xfermode = originalXfermode
+            layout.paint.maskFilter = originalMaskFilter
             if (item.opacity < 1.0f) {
                 layout.paint.alpha = originalAlpha
             }
 
             canvas.restore()
+        }
+    }
+
+    private fun applyTypeface(
+        context: Context,
+        paint: TextPaint,
+        typefaceName: String?,
+    ) {
+        if (typefaceName == null) return
+        if (typefaceName == AiDiaryTypeface.NAME) {
+            AiDiaryTypeface.get(context)?.let { paint.typeface = it }
         }
     }
 }

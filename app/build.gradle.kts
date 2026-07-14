@@ -15,7 +15,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.alexdremov.notate"
+        applicationId = "com.booxaidiary.notate"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

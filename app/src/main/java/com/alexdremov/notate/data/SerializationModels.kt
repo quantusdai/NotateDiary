@@ -12,6 +12,7 @@ import kotlinx.serialization.protobuf.ProtoNumber
 enum class CanvasType {
     INFINITE,
     FIXED_PAGES,
+    AI_DIARY,
 }
 
 @Serializable
@@ -46,6 +47,8 @@ data class CanvasData(
     val nextStrokeOrder: Long = 0,
     @ProtoNumber(17)
     val uuid: String? = null,
+    @ProtoNumber(18)
+    val conversationJson: String? = null,
 )
 
 @Serializable
@@ -128,6 +131,7 @@ data class TextItemData(
     @ProtoNumber(11) val opacity: Float = 1.0f,
     @ProtoNumber(12) val alignment: Int = 0, // 0: Normal, 1: Opposite, 2: Center
     @ProtoNumber(13) val backgroundColor: Int = 0,
+    @ProtoNumber(14) val typefaceName: String? = null,
 )
 
 @Serializable
@@ -146,6 +150,8 @@ data class StrokeData(
     val strokeOrder: Long = 0,
     @ProtoNumber(8)
     val zIndex: Float = 0f,
+    @ProtoNumber(9)
+    val opacity: Float = 1.0f,
 ) {
     companion object {
         const val PACKED_POINT_STRIDE = 6
@@ -173,7 +179,8 @@ data class StrokeData(
         if (width != other.width) return false
         if (style != other.style) return false
         if (strokeOrder != other.strokeOrder) return false
-        return zIndex == other.zIndex
+        if (zIndex != other.zIndex) return false
+        return opacity == other.opacity
     }
 
     override fun hashCode(): Int {
@@ -184,6 +191,7 @@ data class StrokeData(
         result = 31 * result + style.hashCode()
         result = 31 * result + strokeOrder.hashCode()
         result = 31 * result + zIndex.hashCode()
+        result = 31 * result + opacity.hashCode()
         return result
     }
 }

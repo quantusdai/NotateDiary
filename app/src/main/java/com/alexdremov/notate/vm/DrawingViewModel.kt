@@ -90,6 +90,9 @@ class DrawingViewModel
         private val _isToolbarDragging = MutableStateFlow(false)
         val isToolbarDragging: StateFlow<Boolean> = _isToolbarDragging.asStateFlow()
 
+        private val _isAiDiaryMode = MutableStateFlow(false)
+        val isAiDiaryMode: StateFlow<Boolean> = _isAiDiaryMode.asStateFlow()
+
         init {
             loadTools()
             _isCollapsibleToolbar.value = PreferencesManager.isCollapsibleToolbarEnabled(getApplication())
@@ -242,6 +245,14 @@ class DrawingViewModel
         fun setFixedPageCenterHorizontal(enabled: Boolean) {
             _isFixedPageCenterHorizontal.value = enabled
             PreferencesManager.setFixedPageCenterHorizontalEnabled(getApplication(), enabled)
+        }
+
+        fun setAiDiaryMode(enabled: Boolean) {
+            _isAiDiaryMode.value = enabled
+        }
+
+        fun toggleAiDiaryMode() {
+            _isAiDiaryMode.value = !_isAiDiaryMode.value
         }
 
         fun setEditMode(enabled: Boolean) {

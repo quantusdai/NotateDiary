@@ -156,6 +156,28 @@ fun CreateCanvasDialog(
                     )
                 }
 
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .selectable(
+                            selected = (selectedType == CanvasType.AI_DIARY),
+                            onClick = { selectedType = CanvasType.AI_DIARY },
+                            role = Role.RadioButton,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(
+                        selected = (selectedType == CanvasType.AI_DIARY),
+                        onClick = null,
+                    )
+                    Text(
+                        text = "AI Diary",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+
                 if (selectedType == CanvasType.FIXED_PAGES) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 

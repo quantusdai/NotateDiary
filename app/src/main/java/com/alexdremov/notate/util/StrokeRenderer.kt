@@ -313,8 +313,10 @@ object StrokeRenderer {
     // --- Helpers ---
 
     private fun calculateDisplayColor(stroke: Stroke): Int {
-        val alpha = (Color.alpha(stroke.color) * stroke.style.alphaMultiplier).toInt()
-        return (stroke.color and 0x00FFFFFF) or (alpha shl 24)
+        val baseAlpha = Color.alpha(stroke.color)
+        val styleAlpha = (baseAlpha * stroke.style.alphaMultiplier).toInt()
+        val finalAlpha = (styleAlpha * stroke.opacity).toInt().coerceIn(0, 255)
+        return (stroke.color and 0x00FFFFFF) or (finalAlpha shl 24)
     }
 
     private fun getSafeMaxPressure(stroke: Stroke): Float {

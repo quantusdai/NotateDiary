@@ -106,6 +106,12 @@ class ProjectRepository(
                 canvasType = type,
                 pageWidth = pageWidth,
                 pageHeight = pageHeight,
+                backgroundStyle =
+                    if (type == com.alexdremov.notate.data.CanvasType.AI_DIARY) {
+                        com.alexdremov.notate.model.BackgroundStyle.Parchment()
+                    } else {
+                        com.alexdremov.notate.model.BackgroundStyle.Blank()
+                    },
                 uuid =
                     java.util.UUID
                         .randomUUID()

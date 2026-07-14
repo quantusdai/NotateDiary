@@ -29,6 +29,11 @@ data class TextItem(
     override val order: Long = 0,
     val rotation: Float = 0f,
     val opacity: Float = 1.0f,
+    /**
+     * Optional typeface identifier. Null means the default typeface.
+     * Used by AI Diary to render replies in a handwritten diary font.
+     */
+    val typefaceName: String? = null,
 ) : CanvasItem {
     @Transient
     var renderCache: StaticLayout? = null
@@ -74,7 +79,8 @@ data class TextItem(
             logicalBounds.width() == other.logicalBounds.width() &&
             alignment == other.alignment &&
             backgroundColor == other.backgroundColor &&
-            opacity == other.opacity
+            opacity == other.opacity &&
+            typefaceName == other.typefaceName
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -95,7 +101,8 @@ data class TextItem(
             backgroundColor == other.backgroundColor &&
             zIndex == other.zIndex &&
             rotation == other.rotation &&
-            opacity == other.opacity
+            opacity == other.opacity &&
+            typefaceName == other.typefaceName
     }
 
     override fun hashCode(): Int {
@@ -109,6 +116,7 @@ data class TextItem(
         result = 31 * result + zIndex.hashCode()
         result = 31 * result + rotation.hashCode()
         result = 31 * result + opacity.hashCode()
+        result = 31 * result + (typefaceName?.hashCode() ?: 0)
         return result
     }
 }

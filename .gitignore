@@ -19,3 +19,5 @@ profile_memory.sh
 FEATUREPLAN.md
 webdav
 decompiled_notes
+build_output*.log
+*.log

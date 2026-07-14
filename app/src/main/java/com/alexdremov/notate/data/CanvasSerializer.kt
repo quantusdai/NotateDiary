@@ -53,6 +53,7 @@ object CanvasSerializer {
             style = item.style,
             strokeOrder = item.strokeOrder,
             zIndex = item.zIndex,
+            opacity = item.opacity,
         )
     }
 
@@ -103,6 +104,7 @@ object CanvasSerializer {
                     else -> 0
                 },
             backgroundColor = item.backgroundColor,
+            typefaceName = item.typefaceName,
         )
 
     fun fromTextItemData(tData: TextItemData): com.alexdremov.notate.model.TextItem {
@@ -125,6 +127,7 @@ object CanvasSerializer {
             order = tData.order,
             rotation = tData.rotation,
             opacity = tData.opacity,
+            typefaceName = tData.typefaceName,
         )
     }
 
@@ -258,6 +261,7 @@ object CanvasSerializer {
             bounds = bounds,
             strokeOrder = sData.strokeOrder,
             zIndex = sData.zIndex,
+            opacity = sData.opacity,
         )
     }
 
@@ -276,6 +280,7 @@ object CanvasSerializer {
         val tagIds: List<String> = emptyList(),
         val tagDefinitions: List<Tag> = emptyList(),
         val uuid: String? = null,
+        val conversationJson: String? = null,
     )
 
     fun serializeCanvasData(canvasData: CanvasData): ByteArray = ProtoBuf.encodeToByteArray(CanvasData.serializer(), canvasData)
@@ -325,6 +330,7 @@ object CanvasSerializer {
         regionSize: Float,
         nextStrokeOrder: Long,
         uuid: String? = null,
+        conversationJson: String? = null,
     ): CanvasData =
         CanvasData(
             canvasType = canvasType,
@@ -340,5 +346,6 @@ object CanvasSerializer {
             regionSize = regionSize,
             nextStrokeOrder = nextStrokeOrder,
             uuid = uuid,
+            conversationJson = conversationJson,
         )
 }

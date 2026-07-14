@@ -98,6 +98,13 @@ interface CanvasController {
         y: Float,
         fontSize: Float,
         color: Int,
+        typefaceName: String? = null,
+        selectAfterAdd: Boolean = true,
+    ): com.alexdremov.notate.model.TextItem?
+
+    suspend fun updateItemsOpacity(
+        items: List<com.alexdremov.notate.model.CanvasItem>,
+        opacity: Float,
     )
 
     suspend fun updateText(

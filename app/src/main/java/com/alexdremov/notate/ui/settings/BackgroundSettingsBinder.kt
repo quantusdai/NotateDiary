@@ -118,6 +118,7 @@ class BackgroundSettingsBinder(
             is BackgroundStyle.Dots -> rgPatternType.check(R.id.rb_dots)
             is BackgroundStyle.Lines -> rgPatternType.check(R.id.rb_lines)
             is BackgroundStyle.Grid -> rgPatternType.check(R.id.rb_grid)
+            is BackgroundStyle.Parchment -> rgPatternType.check(R.id.rb_parchment)
         }
     }
 
@@ -290,17 +291,14 @@ class BackgroundSettingsBinder(
     private fun updateUIState(checkedId: Int) {
         val isBlank = checkedId == R.id.rb_blank
         val isDots = checkedId == R.id.rb_dots
+        val isParchment = checkedId == R.id.rb_parchment
 
-        layoutSpacing.visibility = if (isBlank) View.GONE else View.VISIBLE
-        layoutSize.visibility = if (isBlank) View.GONE else View.VISIBLE
-        layoutColor.visibility = if (isBlank) View.GONE else View.VISIBLE
-        // Logic: Show page settings if we are in Fixed Page Mode AND (Not Blank OR user wants to set padding for blank pages?
-        // Previously decided: !isBlank && isFixedPageMode.
-        // But if user wants to set padding before picking style, maybe allow it?
-        // Let's stick to !isBlank to avoid clutter, as padding on blank is invisible anyway (unless we render page borders respecting padding, which we don't).
-        layoutPageSettings.visibility = if (!isBlank && isFixedPageMode) View.VISIBLE else View.GONE
+        layoutSpacing.visibility = if (isBlank || isParchment) View.GONE else View.VISIBLE
+        layoutSize.visibility = if (isBlank || isParchment) View.GONE else View.VISIBLE
+        layoutColor.visibility = if (isBlank || isParchment) View.GONE else View.VISIBLE
+        layoutPageSettings.visibility = if ((!isBlank && !isParchment) && isFixedPageMode) View.VISIBLE else View.GONE
 
-        if (isBlank) return
+        if (isBlank || isParchment) return
 
         seekbarSpacing.progress = mmToProgress(context.pxToMm(spacingPx), MIN_SPACING_MM, MAX_SPACING_MM)
 
@@ -321,7 +319,7 @@ class BackgroundSettingsBinder(
 
     private fun updateLabels() {
         val checkedId = rgPatternType.checkedRadioButtonId
-        if (checkedId == R.id.rb_blank) return
+        if (checkedId == R.id.rb_blank || checkedId == R.id.rb_parchment) return
 
         tvSpacingLabel.text = String.format("Spacing: %.1f mm", context.pxToMm(spacingPx))
         if (checkedId == R.id.rb_dots) {
@@ -370,6 +368,16 @@ class BackgroundSettingsBinder(
                         color = selectedColor,
                         spacing = spacingPx,
                         thickness = thicknessPx,
+                        paddingTop = paddingTopPx,
+                        paddingBottom = paddingBottomPx,
+                        paddingLeft = paddingLeftPx,
+                        paddingRight = paddingRightPx,
+                        isCentered = isCentered,
+                    )
+                }
+
+                R.id.rb_parchment -> {
+                    BackgroundStyle.Parchment(
                         paddingTop = paddingTopPx,
                         paddingBottom = paddingBottomPx,
                         paddingLeft = paddingLeftPx,

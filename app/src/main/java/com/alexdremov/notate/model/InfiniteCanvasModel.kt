@@ -88,6 +88,14 @@ class InfiniteCanvasModel {
     // UUID for linking
     private var uuid: String? = null
 
+    // AI Diary conversation state (serialized as JSON)
+    var conversationJson: String? = null
+        private set
+
+    fun setConversationJson(json: String?) {
+        conversationJson = json
+    }
+
     fun getRegionManager(): RegionManager? = regionManager
 
     suspend fun initializeSession(manager: RegionManager) {
@@ -323,6 +331,27 @@ class InfiniteCanvasModel {
             executeAction(action)
             historyManager.addToStack(action)
             orderedNewItems
+        }
+    }
+
+    /**
+     * Updates items in place without touching undo history or changing order IDs.
+     * Used for transient visual animations (e.g. AI Diary opacity fades).
+     */
+    suspend fun updateItems(
+        oldItems: List<CanvasItem>,
+        newItems: List<CanvasItem>,
+    ) {
+        if (oldItems.isEmpty() || newItems.isEmpty() || oldItems.size != newItems.size) return
+        mutex.withLock {
+            val rm = regionManager ?: return
+            rm.removeItems(oldItems)
+            newItems.forEach { rm.addItem(it) }
+            val bounds = RectF()
+            oldItems.forEach { bounds.union(it.bounds) }
+            newItems.forEach { bounds.union(it.bounds) }
+            updateContentBounds(bounds)
+            _events.tryEmit(ModelEvent.ItemsUpdated(newItems))
         }
     }
 
@@ -598,6 +627,7 @@ class InfiniteCanvasModel {
                 regionSize = size,
                 nextStrokeOrder = nextOrder,
                 uuid = uuid,
+                conversationJson = conversationJson,
             )
         }
 
@@ -624,6 +654,7 @@ class InfiniteCanvasModel {
             tagIds = state.tagIds
             tagDefinitions = state.tagDefinitions
             uuid = state.uuid
+            conversationJson = state.conversationJson
         }
     }
 
@@ -641,6 +672,7 @@ class InfiniteCanvasModel {
             tagDefinitions = data.tagDefinitions
             nextOrder = data.nextStrokeOrder
             uuid = data.uuid
+            conversationJson = data.conversationJson
         }
     }
 

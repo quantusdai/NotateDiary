@@ -485,8 +485,10 @@ class CanvasControllerImpl(
         y: Float,
         fontSize: Float,
         color: Int,
-    ) {
-        if (text.isBlank()) return
+        typefaceName: String?,
+        selectAfterAdd: Boolean,
+    ): com.alexdremov.notate.model.TextItem? {
+        if (text.isBlank()) return null
 
         operationMutex.withLock {
             // Default width for new text box
@@ -498,6 +500,7 @@ class CanvasControllerImpl(
                     text,
                     defaultWidth,
                     fontSize,
+                    typefaceName,
                 )
 
             val logical = RectF(x, y, x + defaultWidth, y + measuredHeight)
@@ -509,23 +512,44 @@ class CanvasControllerImpl(
                     color = color,
                     logicalBounds = logical,
                     bounds = RectF(logical).apply { inset(-5f, -5f) },
+                    typefaceName = typefaceName,
                 )
 
-            val added = model.addItem(textItem)
+            val added = model.addItem(textItem) as? com.alexdremov.notate.model.TextItem
             if (added != null) {
                 withContext(Dispatchers.Main) {
                     renderer.updateTilesWithItem(added)
-                    // Select the new text item to allow immediate moving/resizing
-                    selectionManager.clearSelection()
-                    selectionManager.select(added)
-                    renderer.setHiddenItems(selectionManager.getSelectedIds())
-                    renderer.hideItemsInCache(listOf(added))
-                    generateSelectionImposter()
+                    if (selectAfterAdd) {
+                        // Select the new text item to allow immediate moving/resizing
+                        selectionManager.clearSelection()
+                        selectionManager.select(added)
+                        renderer.setHiddenItems(selectionManager.getSelectedIds())
+                        renderer.hideItemsInCache(listOf(added))
+                        generateSelectionImposter()
+                    }
                     renderer.invalidate()
                     onContentChangedListener?.invoke()
                 }
             }
+            return added
         }
+    }
+
+    override suspend fun updateItemsOpacity(
+        items: List<com.alexdremov.notate.model.CanvasItem>,
+        opacity: Float,
+    ) {
+        if (items.isEmpty()) return
+        val clampedOpacity = opacity.coerceIn(0f, 1f)
+        val newItems =
+            items.map { item ->
+                when (item) {
+                    is com.alexdremov.notate.model.TextItem -> item.copy(opacity = clampedOpacity)
+                    is com.alexdremov.notate.model.Stroke -> item.copy(opacity = clampedOpacity)
+                    else -> item
+                }
+            }
+        model.updateItems(items, newItems)
     }
 
     override suspend fun updateText(

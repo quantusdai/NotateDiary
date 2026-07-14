@@ -15,6 +15,7 @@ data class Stroke(
     override val bounds: RectF,
     val strokeOrder: Long = 0,
     override val zIndex: Float = 0f,
+    val opacity: Float = 1.0f,
 ) : CanvasItem {
     override val order: Long get() = strokeOrder
 
@@ -64,6 +65,7 @@ data class Stroke(
         if (style != other.style) return false
         if (bounds != other.bounds) return false
         if (zIndex != other.zIndex) return false
+        if (opacity != other.opacity) return false
         if (points != other.points) return false
 
         return true
@@ -76,6 +78,7 @@ data class Stroke(
         result = 31 * result + style.hashCode()
         result = 31 * result + bounds.hashCode()
         result = 31 * result + zIndex.hashCode()
+        result = 31 * result + opacity.hashCode()
         result = 31 * result + points.hashCode()
         return result
     }

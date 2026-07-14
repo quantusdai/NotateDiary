@@ -59,6 +59,15 @@ object EpdFastModeController {
         }
     }
 
+    fun applyTransientUpdate(mode: UpdateMode) {
+        initReflection()
+        try {
+            applyTransientUpdateMethod?.invoke(null, mode)
+        } catch (e: Exception) {
+            Logger.w("EpdFastMode", "Failed to apply transient update", e)
+        }
+    }
+
     fun exitFastMode() {
         initReflection()
         try {

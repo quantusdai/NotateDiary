@@ -57,4 +57,14 @@ sealed class BackgroundStyle {
         override val paddingRight: Float = 0f,
         override val isCentered: Boolean = false,
     ) : BackgroundStyle()
+
+    @Serializable
+    data class Parchment(
+        override val color: Int = Color.TRANSPARENT,
+        override val paddingTop: Float = 0f,
+        override val paddingBottom: Float = 0f,
+        override val paddingLeft: Float = 0f,
+        override val paddingRight: Float = 0f,
+        override val isCentered: Boolean = false,
+    ) : BackgroundStyle()
 }

@@ -126,6 +126,8 @@ class OnyxCanvasView
 
         var onStrokeStarted: (() -> Unit)? = null
 
+        var onStrokeEnded: (() -> Unit)? = null
+
         var onContentChanged: (() -> Unit)? = null
 
         var minimapDrawer: com.alexdremov.notate.ui.render.MinimapDrawer? = null
@@ -210,6 +212,7 @@ class OnyxCanvasView
                         minimapDrawer?.setDirty()
                         drawContent()
                         onContentChanged?.invoke()
+                        onStrokeEnded?.invoke()
                     },
                 )
 
@@ -578,10 +581,10 @@ class OnyxCanvasView
 
                 try {
                     val bgColor =
-                        if (canvasModel.canvasType == CanvasType.FIXED_PAGES) {
-                            CanvasConfig.FIXED_PAGE_CANVAS_BG_COLOR
-                        } else {
-                            Color.WHITE
+                        when (canvasModel.canvasType) {
+                            CanvasType.FIXED_PAGES -> CanvasConfig.FIXED_PAGE_CANVAS_BG_COLOR
+                            CanvasType.AI_DIARY -> resolveAiDiaryBackgroundColor()
+                            else -> Color.WHITE
                         }
                     cv.drawColor(bgColor)
 
@@ -850,8 +853,56 @@ class OnyxCanvasView
             performHardRefresh()
         }
 
+        /**
+         * Request a partial E-ink refresh of [bounds] (world coordinates).
+         * If [bounds] is null the whole visible area is refreshed.
+         */
+        fun requestPartialRefresh(
+            bounds: RectF? = null,
+            mode: com.onyx.android.sdk.api.device.epd.UpdateMode = com.onyx.android.sdk.api.device.epd.UpdateMode.DU,
+        ) {
+            val visibleRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+            matrix.invert(inverseMatrix)
+            inverseMatrix.mapRect(visibleRect)
+
+            val refreshBounds = bounds ?: visibleRect
+            if (RectF.intersects(refreshBounds, visibleRect)) {
+                canvasRenderer.refreshTiles(viewportInteractor.getCurrentScale(), refreshBounds)
+            }
+
+            minimapDrawer?.setDirty()
+            drawContent()
+
+            val screenBounds = refreshBounds.toScreenRect()
+            if (!screenBounds.isEmpty) {
+                EpdController.invalidate(this, screenBounds.left, screenBounds.top, screenBounds.right, screenBounds.bottom, mode)
+            } else {
+                EpdController.invalidate(this, mode)
+            }
+        }
+
+        private fun RectF.toScreenRect(): Rect {
+            val screenRect = RectF(this)
+            matrix.mapRect(screenRect)
+            return Rect(
+                screenRect.left.toInt(),
+                screenRect.top.toInt(),
+                screenRect.right.toInt(),
+                screenRect.bottom.toInt(),
+            ).apply { sort() }
+        }
+
         private fun updateTouchHelperTool() {
             penInputHandler.setScale(viewportInteractor.getCurrentScale())
+        }
+
+        private fun resolveAiDiaryBackgroundColor(): Int {
+            val style = canvasModel.backgroundStyle
+            return if (style is com.alexdremov.notate.model.BackgroundStyle.Parchment) {
+                com.alexdremov.notate.ui.render.background.ParchmentBackgroundRenderer.PARCHMENT_COLOR
+            } else {
+                Color.WHITE
+            }
         }
 
         private fun performHardRefresh() {

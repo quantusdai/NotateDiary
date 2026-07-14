@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -42,6 +43,10 @@ import com.alexdremov.notate.ui.toolbar.MainToolbar
 import com.alexdremov.notate.ui.view.FloatingWindowView
 import com.alexdremov.notate.util.Logger
 import com.alexdremov.notate.vm.DrawingViewModel
+import com.alexdremov.notate.ai.AIDiaryPreferences
+import com.alexdremov.notate.ai.AIDiarySettingsDialog
+import com.alexdremov.notate.ai.provider.ProviderSettings
+import com.alexdremov.notate.ai.toAIDiarySession
 import com.onyx.android.sdk.api.device.epd.EpdController
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +85,10 @@ class CanvasActivity : AppCompatActivity() {
     // Floating Window State
     private var floatingWindow: FloatingWindowView? = null
     private var floatingSession: com.alexdremov.notate.data.CanvasSession? = null
+
+    // AI Diary State
+    private var aiDiaryBinder: com.alexdremov.notate.ai.AIDiaryCanvasBinder? = null
+    private val showAiDiarySettings = mutableStateOf(false)
 
     private var pendingLinkCallback: ((name: String, uuid: String) -> Unit)? = null
     private var pendingFileCallback: ((name: String, path: String) -> Unit)? = null
@@ -355,6 +364,20 @@ class CanvasActivity : AppCompatActivity() {
                 )
                 setContent {
                     val horizontal by remember { isToolbarHorizontal }
+                    val showSettings by remember { showAiDiarySettings }
+
+                    LaunchedEffect(showSettings) {
+                        if (showSettings) {
+                            viewModel.setDrawingEnabled(false)
+                        } else {
+                            updateDrawingEnabledState()
+                        }
+                    }
+
+                    if (showSettings) {
+                        AIDiarySettingsDialog(onDismiss = { showAiDiarySettings.value = false })
+                    }
+
                     MainToolbar(
                         viewModel = viewModel,
                         isHorizontal = horizontal,
@@ -388,6 +411,9 @@ class CanvasActivity : AppCompatActivity() {
                         onOpenSidebar = {
                             sidebarCoordinator.open()
                             sidebarController.showMainMenu()
+                        },
+                        onAiDiaryClick = {
+                            showAiDiarySettings.value = true
                         },
                         onToolbarExpandStart = { toolbarCoordinator.savePosition() },
                         onToolbarExpanded = {
@@ -459,6 +485,11 @@ class CanvasActivity : AppCompatActivity() {
             if (sidebarCoordinator.isOpen) {
                 sidebarCoordinator.close()
             }
+            aiDiaryBinder?.onStrokeStarted()
+        }
+
+        binding.canvasView.onStrokeEnded = {
+            aiDiaryBinder?.onStrokeEnded()
         }
 
         binding.canvasView.onRequestInsertImage = {
@@ -604,8 +635,12 @@ class CanvasActivity : AppCompatActivity() {
                                 binding.canvasView.loadMetadata(session.metadata)
 
                                 val isFixed = session.metadata.canvasType == com.alexdremov.notate.data.CanvasType.FIXED_PAGES
+                                val isAiDiary = session.metadata.canvasType == com.alexdremov.notate.data.CanvasType.AI_DIARY
                                 isFixedPageState?.value = isFixed
                                 viewModel.setFixedPageMode(isFixed)
+                                viewModel.setAiDiaryMode(isAiDiary)
+
+                                setupAiDiaryBinder(isAiDiary, session.metadata.conversationJson)
 
                                 // Toolbar init logic is now in ViewModel's loadCanvasSession
 
@@ -889,6 +924,40 @@ class CanvasActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupAiDiaryBinder(
+        isAiDiary: Boolean,
+        conversationJson: String?,
+    ) {
+        // Clean up existing binder
+        aiDiaryBinder?.destroy()
+        aiDiaryBinder = null
+
+        if (!isAiDiary) return
+
+        aiDiaryBinder =
+            com.alexdremov.notate.ai.AIDiaryCanvasBinder(
+                context = this,
+                coroutineScope = lifecycleScope,
+                canvasModel = binding.canvasView.getModel(),
+                canvasController = binding.canvasView.getController(),
+                canvasRenderer = binding.canvasView.getRenderer(),
+                onRequestRefresh = { binding.canvasView.refreshScreen() },
+                onRequestPartialRefresh = { bounds, mode ->
+                    binding.canvasView.requestPartialRefresh(bounds, mode)
+                },
+                onStatusUpdate = { status ->
+                    if (status.isNotBlank()) {
+                        android.widget.Toast.makeText(this@CanvasActivity, status, android.widget.Toast.LENGTH_LONG).show()
+                    }
+                },
+                captureDelayMs = AIDiaryPreferences.getCaptureDelayMs(this),
+            )
+
+        conversationJson?.toAIDiarySession()?.let {
+            aiDiaryBinder?.loadSession(it)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // Ensure no sync runs while canvas is active
@@ -927,6 +996,8 @@ class CanvasActivity : AppCompatActivity() {
         super.onDestroy()
         autoSaveJob?.cancel()
         closeFloatingSession()
+        aiDiaryBinder?.destroy()
+        aiDiaryBinder = null
         // Session cleanup is handled by ViewModel or explicit close in onBackPressed
     }
 

@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import com.alexdremov.notate.model.BackgroundStyle
 import com.alexdremov.notate.ui.render.background.BackgroundPatternCache
+import com.alexdremov.notate.ui.render.background.ParchmentBackgroundRenderer
 import kotlin.math.floor
 
 object BackgroundDrawer {
@@ -97,6 +98,10 @@ object BackgroundDrawer {
                 } else {
                     drawGridVector(canvas, style, rect, offsetX, offsetY, forceVector)
                 }
+            }
+
+            is BackgroundStyle.Parchment -> {
+                ParchmentBackgroundRenderer.draw(canvas, rect)
             }
         }
     }

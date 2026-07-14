@@ -59,7 +59,9 @@ object ThumbnailGenerator {
                     RectF(0f, 0f, w, h)
                 }
 
-                CanvasType.INFINITE -> {
+                CanvasType.INFINITE,
+                CanvasType.AI_DIARY,
+                -> {
                     val dm = context.resources.displayMetrics
                     val vW = dm.widthPixels.toFloat()
                     val vH = dm.heightPixels.toFloat()
