@@ -1,6 +1,7 @@
 MIT License
 
-Copyright (c) 2026 Aleksandr Dremov
+Copyright (c) 2026 Aleksandr Dremov (original "Notate" note-taking engine)
+Copyright (c) 2026 quantusdai (NotateDiary — Android / BOOX port & AI Diary)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +20,14 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+------------------------------------------------------------------------------
+
+This project is a derivative work. See NOTICE for full attribution:
+
+  * "Notate" note-taking engine — https://github.com/alexdremov/notate (MIT)
+  * Enchanted-diary concept     — https://github.com/MaximeRivest/riddle (MIT)
+
+NOTE: The bundled reply font "ai_diary_handwritten.ttf" (ShuTiFang Zhao
+JiuJiang) is NOT covered by this MIT license. Its redistribution rights are
+unclear — see the "Fonts" section of README.md before redistributing.

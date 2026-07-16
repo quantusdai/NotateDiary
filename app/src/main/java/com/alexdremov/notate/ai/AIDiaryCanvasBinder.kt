@@ -8,6 +8,15 @@ import com.alexdremov.notate.ui.render.CanvasRenderer
 import com.onyx.android.sdk.api.device.epd.UpdateMode
 import kotlinx.coroutines.CoroutineScope
 
+/**
+ * Lifecycle-friendly facade around [AIDiaryCaptureManager].
+ *
+ * The canvas UI (e.g. `CanvasActivity`) talks to this binder instead of the
+ * manager directly: it owns the manager instance and simply forwards pen
+ * stroke lifecycle events ([onStrokeStarted] / [onStrokeEnded]) and session
+ * load/save. This keeps the AI-diary wiring in one place and makes the
+ * manager easy to create, swap, and [destroy] with the host view.
+ */
 class AIDiaryCanvasBinder(
     context: Context,
     coroutineScope: CoroutineScope,

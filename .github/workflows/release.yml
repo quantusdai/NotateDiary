@@ -54,9 +54,9 @@ jobs:
       id: apk-name
       run: |
         if [ "${{ github.event_name }}" = "pull_request" ]; then
-          echo "filename=notate-pr-${{ github.event.pull_request.number }}.apk" >> $GITHUB_OUTPUT
+          echo "filename=NotateDiary-pr-${{ github.event.pull_request.number }}.apk" >> $GITHUB_OUTPUT
         else
-          echo "filename=notate-${{ github.ref_name }}.apk" >> $GITHUB_OUTPUT
+          echo "filename=NotateDiary-${{ github.ref_name }}.apk" >> $GITHUB_OUTPUT
         fi
 
     - name: Rename APK

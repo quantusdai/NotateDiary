@@ -1,0 +1,82 @@
+NotateDiary
+===========
+
+The diary of Tom Riddle, for Onyx BOOX & Android E-Ink tablets.
+
+This product includes software developed by third parties. We are grateful to
+the following open-source projects and their authors.
+
+
+Upstream projects / 上游项目
+----------------------------
+
+1. Notate — the handwriting / note-taking engine
+     https://github.com/alexdremov/notate
+     Copyright (c) Aleksandr Dremov
+     License: MIT
+
+     NotateDiary is built directly on top of the Notate codebase (infinite
+     canvas, stroke rendering, E-Ink optimizations, sync, export). The original
+     MIT license and copyright are retained in LICENSE.
+
+2. riddle — the enchanted diary of Tom Riddle (the original concept)
+     https://github.com/MaximeRivest/riddle
+     Copyright (c) Maxime Rivest
+     License: MIT
+
+     The creative concept and core interaction of the enchanted diary — write in
+     ink, the diary drinks your words, and an answer writes itself back in a
+     flowing hand — originate from riddle, which targets the reMarkable Paper
+     Pro. NotateDiary ports this experience to Android / BOOX E-Ink devices and
+     re-implements it on the Notate engine with an LLM as the diary's "spirit".
+
+
+Modifications in this derivative work / 本衍生作品的修改
+------------------------------------------------------
+
+  * Ported the enchanted-diary interaction to Android (Jetpack Compose) and
+    Onyx BOOX E-Ink devices.
+  * Added the AI Diary feature package `com.alexdremov.notate.ai`:
+    handwriting capture, OpenAI-compatible vision-LLM client, persona (Tom
+    Riddle) prompting, ink-bleed reveal / fade-out animations, and bilingual
+    (CN/EN) reply behavior.
+  * Added encrypted API-key storage (EncryptedSharedPreferences).
+  * Re-themed the canvas as a parchment diary page with a handwritten reply
+    typeface.
+
+These modifications and additions are also released under the MIT License.
+
+
+Third-party components / 第三方组件
+-----------------------------------
+
+  * Onyx Boox SDK        — E-Ink pen input APIs (proprietary, Onyx International)
+    https://github.com/onyx-intl/OnyxAndroidDemo
+  * HiddenApiBypass      — Apache-2.0 — https://github.com/LSPosed/AndroidHiddenApiBypass
+  * Notable (inspiration)— https://github.com/Ethran/notable
+  * plus the libraries listed in app/build.gradle.kts (Jetpack Compose, OkHttp,
+    PdfBox-Android, dav4jvm, Markwon, kotlinx.serialization, ...), each under
+    its own open-source license.
+
+
+Fonts / 字体
+------------
+
+  * ai_diary_handwritten.ttf — "ShuTiFang Zhao JiuJiang" (书体坊赵九江) Chinese
+    calligraphy font, obtained from a public font-download site (mobanwang.com).
+    *** Its redistribution license is unclear and it is NOT covered by the MIT
+    license of this repository. *** It is bundled here for personal,
+    non-commercial study/demonstration only. If you redistribute or
+    commercialize this project, verify the font license yourself or replace it
+    with an openly-licensed handwriting font (e.g. Dancing Script / Caveat /
+    Zhi Mang Xing /思源 / 站酷 series).
+    See README.md → "Fonts".
+
+
+Trademarks / 商标
+-----------------
+
+"Harry Potter" and "Tom Riddle" are trademarks of Warner Bros. / J.K. Rowling.
+"reMarkable" is a trademark of reMarkable AS. "BOOX" is a trademark of Onyx
+International. This is an unofficial fan project, not affiliated with or
+endorsed by any of them.

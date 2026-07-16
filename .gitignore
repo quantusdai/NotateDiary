@@ -21,3 +21,6 @@ webdav
 decompiled_notes
 build_output*.log
 *.log
+
+# 本地营销/宣传文案，不入公开仓库
+docs/XIAOHONGSHU.md
